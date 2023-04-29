@@ -1,10 +1,11 @@
 import { useState } from "react";
 import SortableBoard from "./components/SortableBoard";
 import SortableItem from "./components/SortableItem";
-import { DndContext, closestCenter, closestCorners } from "@dnd-kit/core";
+import { DndContext, DragOverlay, closestCorners } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 
 function App() {
+  const [activeId, setActiveId] = useState(null);
   const [boards, setBoards] = useState([
     {
       id: "A",
@@ -72,20 +73,48 @@ function App() {
     <div className="ml-10 mt-5 w-full flex items-start gap-4">
       <DndContext
         onDragOver={handleDragOver}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
         collisionDetection={closestCorners}
       >
         {boards.map((board) => {
           return (
-            <SortableBoard items={board.tasks} id={board.id} key={board.id}>
+            <SortableBoard
+              className={
+                board.tasks.find((task) => task === activeId)
+                  ? "bg-neutral-100"
+                  : "bg-neutral-50"
+              }
+              items={board.tasks}
+              id={board.id}
+              key={board.id}
+            >
               {board.tasks.map((task) => {
-                return <SortableItem id={task} key={task} />;
+                return (
+                  <SortableItem
+                    className={activeId === task ? "opacity-20" : null}
+                    id={task}
+                    key={task}
+                  />
+                );
               })}
             </SortableBoard>
           );
         })}
+        <DragOverlay>
+          {activeId ? <SortableItem id={activeId} /> : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );
+
+  function handleDragStart(e) {
+    setActiveId(e.active.id);
+  }
+
+  function handleDragEnd(e) {
+    setActiveId(null);
+  }
 
   function handleDragOver(e) {
     const { active, over } = e;
